@@ -1,0 +1,615 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    
+<title>Venntel Queries</title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.15/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.15/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      .esri-editor .esri-item-list__scroller {
+        max-height: 350px;
+      }
+      /* #queryDiv {
+        background-color: white;
+        color: black;
+        padding: 6px;
+        width: 300px;
+      } */
+    </style>
+
+    <script>
+      var map, view;
+
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/widgets/Search",
+        "esri/widgets/Editor",
+        "esri/layers/FeatureLayer",
+        "esri/request",
+        "esri/Graphic",
+        "esri/tasks/support/Query",
+        "esri/widgets/LayerList",
+        "esri/widgets/Expand",
+        "esri/widgets/Legend"
+      ], function(Map, MapView, Search, Editor, FeatureLayer,esriRequest, Graphic, LayerList, Expand, Legend) {
+        
+        var resultsLayer;
+        var listOfIDs = [];
+        var patternsLayer;
+
+        // Create a map from the referenced webmap item id
+        map = new Map({
+          basemap: "gray-vector"
+        });
+
+        view = new MapView({
+          //center: [-41.647, 36.41],
+          //zoom: 3,
+          center: [-77.029, 38.89],
+          zoom: 10,
+          map: map,
+          container: "viewDiv",
+          popup: {
+            defaultPopupTemplateEnabled: true
+          }
+        }); 
+        var searchWidget = new Search({
+            view: view,
+            //container: searchDiv
+          });
+          view.ui.add(searchWidget, {
+              position: "top-right"
+            });
+        var ptLocationsLayer = createAreasLayer();
+        map.add(ptLocationsLayer);
+        
+        view.when(function() {
+          view.popup.autoOpenEnabled = true; //disable popups
+
+          // Create the Editor
+          var editor = new Editor({
+            view: view 
+          });
+
+          view.ui.add(editor, "top-right");
+          view.ui.add("queryDiv", "top-right");
+          var layerList = new LayerList({
+                view: view,
+                listItemCreatedFunction: function(event) {
+                  const item = event.item;
+                  /* if (item.layer.type != "group") {
+                    // don't show legend twice
+                    item.panel = {
+                      content: "legend",
+                      open: true
+                    };
+                  } */
+                }
+            });
+            var llExpand = new Expand({
+              view: view,
+              content: layerList
+            });
+            // Add widget to the top right corner of the view
+            view.ui.add(llExpand, "bottom-left");
+            var legend = new Legend({
+              view: view,
+              layerInfos: [{
+                layer: patternsLayer,
+                title: "Legend"
+              }]
+            });
+
+            view.ui.add(legend, "bottom-right");
+        });
+        var url = 'info';
+        var graphics = [];
+        var theColors = ["purple", "green", "orange", "blue", "red"];
+
+        var uniquePhonesRenderer = {
+          type: "unique-value",
+          legendOptions: {
+            title: "IDs"
+          },
+          field: "thecolor",
+          uniqueValueInfos: [{
+            value: "purple",
+            symbol: {
+              type: "simple-marker",
+              color: [138,43,226],
+              size: 6,
+              outline: {
+                color: [138,43,226, .5],
+                size: "0.25px"
+              }
+            }
+          }, {
+            value: "green",
+            symbol: {
+              type: "simple-marker",
+              color: [0,255,0],
+              size: 6,
+              outline: {
+                color: [0,255,0, .5],
+                size: "0.25px"
+              }
+            }
+          }, {
+            value: "orange",
+            symbol: {
+              type: "simple-marker",
+              color: [255,165,0],
+              size: 6,
+              outline: {
+                color: [255,165,0, .5],
+                size: "0.25px"
+              }
+            }
+          }, {
+            value: "blue",
+            symbol: {
+              type: "simple-marker",
+              color: [0,0,255],
+              size: 6,
+              outline: {
+                color: [0,0,255, .5],
+                size: "0.25px"
+              }
+            }
+          }, {
+            value: "red",
+            symbol: {
+              type: "simple-marker",
+              color: [255, 0, 0],
+              size: 6,
+              outline: {
+                color: [255,0,0, .5],
+                size: "0.25px"
+              }
+            }
+          }]
+        };
+        
+        var phoneRenderer = {
+          type: "simple",  // autocasts as new SimpleRenderer()
+          symbol: {
+            type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()
+            size: 6,
+            color: "blue",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.25,
+              color: "white"
+            }
+          }
+        }; 
+        var phoneRenderer1 = {
+          type: "simple",  // autocasts as new SimpleRenderer()
+          symbol: {
+            type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()
+            size: 6,
+            color: "green",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.25,
+              color: "white"
+            }
+          }
+        }; 
+        document
+          .getElementById("query-devices")
+          .addEventListener("click", queryDevices);
+        document
+          .getElementById("query-ids")
+          .addEventListener("click", querybyIDs);
+          
+          document
+          .getElementById("clear-query")
+          .addEventListener("click", clearQueryFeatures); 
+
+        function clearQueryFeatures() {
+          resultsLayer.queryFeatures().then(function(results) {
+            if (results.features.length > 0) {
+              resultsLayer.applyEdits({
+                deleteFeatures: results.features
+              });
+            }
+          }.then(ptLocationsLayer.queryFeatures().then(function(results) {
+            if (results.features.length > 0) {
+              ptLocationsLayer.applyEdits({
+                deleteFeatures: results.features
+              });
+            }
+          })));
+        }    
+        //Query for devices based on point features on the map
+        function queryDevices(){
+          graphics = []
+          ptLocationsLayer.queryFeatures().then(function(results){
+            //console.log(results.features.length);
+            lString = [];
+            results.features.forEach(function(feat) {
+              //console.log(feat.attributes);
+              var startDT = new Date(feat.attributes.startTime);
+              var formatted_startdate = startDT.getFullYear() + "-" + appendLeadingZeroes(startDT.getMonth() + 1) + "-" + appendLeadingZeroes(startDT.getDate()) + "T" + appendLeadingZeroes(startDT.getHours()) + ":" + appendLeadingZeroes(startDT.getMinutes()) + ":" + appendLeadingZeroes(startDT.getSeconds()) + "Z";
+              var endDT = new Date(feat.attributes.endTime);
+              var formatted_enddate = endDT.getFullYear() + "-" + appendLeadingZeroes(endDT.getMonth() + 1) + "-" + appendLeadingZeroes(endDT.getDate()) + "T" + appendLeadingZeroes(endDT.getHours()) + ":" + appendLeadingZeroes(endDT.getMinutes()) + ":" + appendLeadingZeroes(endDT.getSeconds()) + "Z";
+              //console.log(formatted_startdate);
+              var theDict = { "longitude": feat.geometry.longitude, "latitude": feat.geometry.latitude, "radius": feat.attributes.distance, "startDate": formatted_startdate, "endDate": formatted_enddate};
+              lString.push(theDict);
+            });
+            var data = {
+              'areas': lString
+            };
+            //console.log(JSON.stringify(data));
+            var theQuery = JSON.stringify(data);
+            //var theURLParams = "venntel_integration?theparams=1";
+            var theURLParams = "venntel_integration/search?data=" + theQuery;
+            //console.log(theURLParams);
+            var theSignalCounts = []
+            esriRequest(theURLParams, {responseType: "json"}).then(function(response){
+              //console.log('inside request');
+              var json = response.data;
+              //console.log(JSON.stringify(json));
+              var countAreas = Object.keys(json.locationData.areas).length;
+              var counter = 0;
+              //console.log(JSON.stringify(json));
+              for (var y=0; y<countAreas; y++){
+                var countIDs = Object.keys(json.locationData.areas[y].registrationIDs).length;
+                for (var i=0; i<countIDs; i++) {
+                  //console.log("i is : " + i)
+                  var countSignals = Object.keys(json.locationData.areas[y].registrationIDs[i].signals).length;
+                  var theID = { "registrationID": json.locationData.areas[y].registrationIDs[i].registrationID, "signalcount": countSignals};
+                  theSignalCounts.push(theID);
+                  for (var x=0; x< countSignals; x++){
+                    //console.log("x is : " + x)
+                    //console.log(JSON.stringify(json.locationData.areas[y].registrationIDs[i].signals[x].longitude));
+                    //console.log(JSON.stringify(json.locationData.areas[y].registrationIDs[i].signals[x].latitude));
+                    point = {
+                      type: "point", // autocasts as new Point()
+                      longitude: json.locationData.areas[y].registrationIDs[i].signals[x].longitude,
+                      latitude: json.locationData.areas[y].registrationIDs[i].signals[x].latitude
+                    };
+                    var pointGraphic = new Graphic({
+                      geometry: point,
+                      attributes: {
+                        "OBJECTID": counter,
+                        "registrationID": json.locationData.areas[y].registrationIDs[i].signals[x].registrationID,
+                        "ipAddress": json.locationData.areas[y].registrationIDs[i].signals[x].ipAddress,
+                        "flags": json.locationData.areas[y].registrationIDs[i].signals[x].flags,
+                        "timestamp": json.locationData.areas[y].registrationIDs[i].signals[x].timestamp
+                      }
+                    });
+                    graphics.push(pointGraphic)
+                    counter++;
+                  }
+                            
+                }
+              }
+              //console.log(theSignalCounts);
+              resultsLayer = createLayer(graphics, "Results", 11);
+              listOfIDs = theSignalCounts.sort((a, b) => Number(b.signalcount) - Number(a.signalcount));
+              console.log(listOfIDs);
+              map.add(resultsLayer); 
+            });
+          });
+        }
+
+       
+        function createFeatures(graphics) {
+          var setGraphics = [];
+          if (graphics.length > 0){
+            var processCounter = 0;
+            for (var i=0; i< graphics.length; i++){
+              if (processCounter == 1000){
+                patternsLayer = createLayer1(setGraphics, "Patterns", 10);
+                map.add(patternsLayer);
+                setGraphics = [];
+                //console.log("created patternsLayer");
+              }
+              else if (processCounter != 0 && (processCounter % 1000) == 0){
+                console.log(setGraphics);
+                var edits = {
+                  addFeatures: setGraphics
+                };
+                patternsLayer.applyEdits(edits)
+                setGraphics = [];
+              }
+              else {
+                setGraphics.push(graphics[i]);
+              }
+              processCounter++;
+            }
+          }
+          return "success";
+        }
+
+        function querybyIDs() {
+          graphics = []
+          var regIDs = []
+          var endDT = new Date();
+          //var endDT = new Date(new Date().setDate(new Date().getDate()- 26));
+          var formatted_enddate = endDT.getFullYear() + "-" + appendLeadingZeroes(endDT.getMonth() + 1) + "-" + appendLeadingZeroes(endDT.getDate()) + "T" + appendLeadingZeroes(endDT.getHours()) + ":" + appendLeadingZeroes(endDT.getMinutes()) + ":" + appendLeadingZeroes(endDT.getSeconds()) + "Z";
+          var startDT = new Date(new Date().setDate(new Date().getDate()- 14));
+          var formatted_startdate = startDT.getFullYear() + "-" + appendLeadingZeroes(startDT.getMonth() + 1) + "-" + appendLeadingZeroes(startDT.getDate()) + "T" + appendLeadingZeroes(startDT.getHours()) + ":" + appendLeadingZeroes(startDT.getMinutes()) + ":" + appendLeadingZeroes(startDT.getSeconds()) + "Z";
+          //console.log(formatted_startdate);
+          if (listOfIDs.length > 5){
+            for(var x=0; x<5; x++) {
+              var theID = { "registrationID": listOfIDs[x].registrationID };
+              regIDs.push(theID);
+            }
+          }
+          else {
+            for(var x=0; x<listOfIDs.length; x++) {
+              var theID = { "registrationID": listOfIDs[x].registrationID };
+              regIDs.push(theID);
+            }
+          }
+          var data = {
+            "startDate": formatted_startdate,
+            "endDate": formatted_enddate,
+            "registrationIDs": regIDs
+          }
+          var theQuery = JSON.stringify(data);
+          //var theURLParams = "venntel_integration?theparams=1";
+          var theURLParams = "venntel_integration/search?data=" + theQuery;
+          //console.log(theURLParams);
+          var theSignalCounts = []
+          esriRequest(theURLParams, {responseType: "json"}).then(function(response){
+            //console.log('inside request');
+            var json = response.data;
+            //console.log(JSON.stringify(json));
+            var countIDs = Object.keys(json.locationData.registrationIDs).length;
+            var counter = 0;
+            //Get listOfIDs
+            var id1;
+            var id2;
+            var id3;
+            var id4; 
+            var id5;
+            for (var z=0; z<countIDs; z++){
+              if (z == 0){
+                id1 = json.locationData.registrationIDs[z].registrationID;
+                console.log(id1);
+              }
+              else if (z == 1){
+                id2 = json.locationData.registrationIDs[z].registrationID;
+              }
+              else if (z == 2){
+                id3 = json.locationData.registrationIDs[z].registrationID;
+              }
+              else if (z ==3){
+                id4 = json.locationData.registrationIDs[z].registrationID;
+              }
+              else if (z == 4){
+                id5 = json.locationData.registrationIDs[z].registrationID;
+              }
+            }
+            console.log(JSON.stringify(json));
+            for (var y=0; y<countIDs; y++){
+              var countIDs = Object.keys(json.locationData.registrationIDs).length;
+              console.log(json.locationData.registrationIDs[y]);
+              for (var i=0; i<countIDs; i++) {
+                //console.log("i is : " + i)
+                var countSignals = Object.keys(json.locationData.registrationIDs[i].signals).length;
+                for (var x=0; x< countSignals; x++){
+                  //console.log("x is : " + x)
+                  //console.log(JSON.stringify(json.locationData.registrationIDs[i].signals[x].longitude));
+                  //console.log(JSON.stringify(json.locationData.registrationIDs[i].signals[x].latitude));
+                  point = {
+                    type: "point", // autocasts as new Point()
+                    longitude: json.locationData.registrationIDs[i].signals[x].longitude,
+                    latitude: json.locationData.registrationIDs[i].signals[x].latitude
+                  };
+                  //console.log(json.locationData.registrationIDs[i].signals[x].registrationID);
+                  //console.log("Color: " + theColors[y])
+                  if (json.locationData.registrationIDs[i].signals[x].registrationID == id1){
+                    theColor1 = "purple";
+                  }
+                  else if  (json.locationData.registrationIDs[i].signals[x].registrationID == id2){
+                    theColor1 = "green";
+                  }
+                  else if  (json.locationData.registrationIDs[i].signals[x].registrationID == id3){
+                    theColor1 = "orange";
+                  }
+                  else if  (json.locationData.registrationIDs[i].signals[x].registrationID == id4){
+                    theColor1 = "blue";
+                  }
+                  else if  (json.locationData.registrationIDs[i].signals[x].registrationID == id5){
+                    theColor1 = "red";
+                  }
+                  var pointGraphic = new Graphic({
+                    geometry: point,
+                    attributes: {
+                      "OBJECTID": counter,
+                      "registrationID": json.locationData.registrationIDs[i].signals[x].registrationID,
+                      "ipAddress": json.locationData.registrationIDs[i].signals[x].ipAddress,
+                      "flags": json.locationData.registrationIDs[i].signals[x].flags,
+                      "timestamp": json.locationData.registrationIDs[i].signals[x].timestamp,
+                      //"thecolor": theColors[y]
+                      "thecolor": theColor1
+                    }
+                  });
+                  graphics.push(pointGraphic)
+
+                  counter++;                
+                }                       
+              }
+            }
+            return graphics; 
+          }).then(createFeatures);    
+        }
+        
+
+        function appendLeadingZeroes(n){
+          if(n <= 9){
+            return "0" + n;
+          }
+          return n
+        }
+
+        //  Creates a client-side FeatureLayer from an array of graphics
+        function createLayer(graphics, theTitle, id) {
+          //console.log(graphics);
+          return new FeatureLayer({
+            source: graphics,
+            title: theTitle,
+            objectIdField: "OBJECTID",
+            fields: [
+              {
+                name: "OBJECTID",
+                type: "oid"
+              },
+              {
+                name: "registrationID",
+                type: "string"
+              },
+              {
+                name: "ipAddress",
+                type: "string"
+              },
+              {
+                name: "flags",
+                type: "integer"
+              },
+              {
+                name: "timestamp",
+                type: "date"
+              }
+            ],
+            outFields: ["*"],
+            popupTemplate: {
+            // autocast as esri/PopupTemplate
+            title: "{RegistrationID} at {timestamp}",
+            content:  "Flags are {flags} </br> ipAddress is {ipAddress}",  
+          },
+            renderer: phoneRenderer
+          });
+        }
+        //  Creates a client-side FeatureLayer from an array of graphics
+        function createLayer1(graphics, theTitle, id) {
+          //console.log(graphics);
+          
+          return new FeatureLayer({
+            source: graphics,
+            title: theTitle,
+            objectIdField: "OBJECTID",
+            fields: [
+              {
+                name: "OBJECTID",
+                type: "oid"
+              },
+              {
+                name: "registrationID",
+                type: "string"
+              },
+              {
+                name: "ipAddress",
+                type: "string"
+              },
+              {
+                name: "flags",
+                type: "integer"
+              },
+              {
+                name: "timestamp",
+                type: "date"
+              },
+              {
+                name: "thecolor",
+                type: "string"
+              }
+            ],
+            outFields: ["*"],
+            popupTemplate: {
+            // autocast as esri/PopupTemplate
+            title: "{RegistrationID} at {timestamp}",
+            content:  "Color is {thecolor}, Flags are {flags} </br> ipAddress is {ipAddress}",  
+          },
+            renderer: uniquePhonesRenderer
+          });
+        }
+        function createAreasLayer() {
+          var current_datetime = new Date();var date = new Date(); 
+          var now_utc =  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(),
+            date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds());
+          //console.log(now_utc);
+          var minSeven = new Date(new Date().setDate(new Date().getDate()-7));
+          var week_utc =  Date.UTC(minSeven.getUTCFullYear(), minSeven.getUTCMonth(), minSeven.getUTCDate(),
+            minSeven.getUTCHours(), minSeven.getUTCMinutes(), minSeven.getUTCSeconds());
+          return new FeatureLayer({
+            title: "searchAreas",
+            fields: [
+              {
+                name: "ObjectID",
+                alias: "ObjectID",
+                type: "oid"
+              },
+              {
+                name: "distance",
+                alias: "Distance",
+                type: "integer",
+                defaultValue: 50
+              },
+              {
+                name: "startTime",
+                alias: "Start Time",
+                type: "date",
+                defaultValue: week_utc
+              },
+              {
+                name: "endTime",
+                alias: "End Time",
+                type: "date",
+                defaultValue: now_utc
+              }
+            ],
+            objectIdField: "ObjectID",
+          geometryType: "point",
+          spatialReference: { wkid: 102100 },
+          source: [], // adding an empty feature collection
+          renderer: {
+            type: "simple",
+            symbol: {
+              type: "web-style", // autocasts as new WebStyleSymbol()
+              styleName: "Esri2DPointSymbolsStyle",
+              name: "tear-pin-1"
+            }
+          },
+          popupTemplate: {
+            title: "{distance}, {startTime}, {endTime}"
+          }
+        });
+        }
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv">
+
+    </div>
+    <div id="queryDiv" class="esri-widget">
+      <button id="query-devices" class="esri-widget">Query Devices</button>
+      <button id='query-ids' class="esri-widget">Get ID's list</button>
+      <button id='clear-query' class='esri-widget'>Clear</button>
+    </div>
+  </body>
+</html>

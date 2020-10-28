@@ -1,0 +1,368 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <!-- ArcGIS JS 4 -->
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.15/esri/themes/dark/main.css"
+    />
+
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 95%;
+        width: 100%;
+      }
+
+      .esri-ui-top-right {
+        max-height: 100%;
+      }
+
+       .btn-toolbar {
+        background-color: whitesmoke;
+      }
+      
+      .btn-group button {
+        background-color: whitesmoke; 
+
+        border: 1px solid darkslategray; 
+        color: white; 
+        cursor: pointer; 
+        float: right; 
+        height: 5%;
+      }
+
+      /* Clear floats (clearfix hack) */
+      .btn-group:after {
+        content: "";
+        clear: both;
+        display: table;
+      }
+
+      .btn-group button:not(:last-child) {
+        border-right: none; 
+      }
+
+      /* Add a background color on hover */
+      .btn-group button:hover {
+        background-color: lightblue;
+      } 
+      
+      #queryDiv {
+        display: none;
+      }
+      .geometry-options {
+        display: flex;
+        flex-direction: row;
+      }
+      .geometry-button {
+        flex: 1;
+        border-style: solid;
+        border-width: 1px;
+        border-image: none;
+      }
+      .geometry-button-selected {
+        background: lightgray;
+        color: #fff;
+      }
+
+      #bufferNum {
+        width: 90%;
+        margin: 2.5em auto 0;
+      }
+
+    </style>
+  </head>
+  <link
+    rel="stylesheet"
+    href="https://js.arcgis.com/4.15/esri/themes/light/main.css"
+  />
+     <!-- ArcGIS JS 4 -->
+    <script src="https://js.arcgis.com/4.15/"></script>
+    
+    <script>
+      var app;
+
+      require([
+        "esri/Map",
+        "esri/request",
+        "esri/views/MapView",
+        "esri/Graphic",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/views/SceneView",
+        "esri/widgets/Search",
+        "esri/widgets/BasemapGallery",
+        "esri/core/watchUtils",
+        "esri/widgets/Slider",
+        "esri/widgets/Sketch/SketchViewModel",
+        "esri/layers/GraphicsLayer"
+        
+      ], function(Map, esriRequest, MapView, Graphic, FeatureLayer, Legend, SceneView,
+              Search, Basemaps, watchUtils, Slider, SketchViewModel, GraphicsLayer) {
+          
+        var map = new Map({
+          basemap: "gray-vector"
+        });
+        const sketchLayer = new GraphicsLayer();
+        var view = new MapView({
+          center: [-41.647, 36.41],
+          zoom: 3,
+          map: map,
+          container: "viewDiv",
+          popup: {
+            defaultPopupTemplateEnabled: true
+          }
+        });
+        //queryDiv.style.display = "block";
+        view.ui.add([queryDiv], "top-right");
+        let bufferSize = 0;
+
+        var url = 'info';
+        var graphics = [];
+        var phoneRenderer = {
+          type: "simple",  // autocasts as new SimpleRenderer()
+          symbol: {
+            type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()
+            size: 6,
+            color: "blue",
+            outline: {  // autocasts as new SimpleLineSymbol()
+              width: 0.25,
+              color: "white"
+            }
+          }
+        };       // use SketchViewModel to draw polygons that are used as a query
+        let sketchGeometry = null;
+        const sketchViewModel = new SketchViewModel({
+          layer: sketchLayer,
+          defaultUpdateOptions: {
+            tool: "reshape",
+            toggleToolOnClick: false
+          },
+          view: view,
+          defaultCreateOptions: { hasZ: false }
+        });
+
+        sketchViewModel.on("create", function(event) {
+          if (event.state === "complete") {
+            sketchGeometry = event.graphic.geometry;
+            runQuery();
+          }
+        });
+
+        sketchViewModel.on("update", function(event) {
+          if (event.state === "complete") {
+            sketchGeometry = event.graphics[0].geometry;
+            runQuery();
+          }
+        });
+        // draw geometry buttons - use the selected geometry to sktech
+        document
+          .getElementById("point-geometry-button")
+          .addEventListener("click", geometryButtonsClickHandler);
+        document
+          .getElementById("line-geometry-button")
+          .addEventListener("click", geometryButtonsClickHandler);
+        document
+          .getElementById("polygon-geometry-button")
+          .addEventListener("click", geometryButtonsClickHandler);
+        function geometryButtonsClickHandler(event) {
+          const geometryType = event.target.value;
+          clearGeometry();
+          sketchViewModel.create(geometryType);
+        }
+
+        const bufferNumSlider = new Slider({
+          container: "bufferNum",
+          min: 0,
+          max: 500,
+          steps: 10,
+          visibleElements: {
+            labels: true
+          },
+          precision: 0,
+          labelFormatFunction: function(value, type) {
+            return value.toString() + "m";
+          },
+          values: [0]
+        });
+        // get user entered values for buffer
+        bufferNumSlider.on(
+          ["thumb-change", "thumb-drag"],
+          bufferVariablesChanged
+        );
+        function bufferVariablesChanged(event) {
+          bufferSize = event.value;
+        }
+        // Clear the geometry and set the default renderer
+        document
+          .getElementById("clearGeometry")
+          .addEventListener("click", clearGeometry);
+
+        document
+          .getElementById("queryVenntel")
+          .addEventListener("click", toggleVenntelQuery);
+
+        // Clear the geometry and set the default renderer
+        function clearGeometry() {
+          sketchGeometry = null;
+          sketchViewModel.cancel();
+          sketchLayer.removeAll();
+          bufferLayer.removeAll();
+          clearHighlighting();
+          clearCharts();
+          resultDiv.style.display = "none";
+        }
+        function toggleVenntelQuery() {
+          console.log(queryDiv.style.display);
+          if (queryDiv.style.display == "" || queryDiv.style.display == "none") {
+            queryDiv.style.display = "block";
+          }
+          else {
+            queryDiv.style.display = "none";
+          }
+        }
+/*         esriRequest(url, {responseType: "json"}).then(function(response){
+            console.log('inside request');
+            var json = response.data;
+            var count = Object.keys(json.locationData.registrationIDs[0].signals).length;
+            console.log(count);
+            //console.log(JSON.stringify(json));
+            for (var i=0; i<count; i++) {
+
+              point = {
+                type: "point", // autocasts as new Point()
+                longitude: json.locationData.registrationIDs[0].signals[i].longitude,
+                latitude: json.locationData.registrationIDs[0].signals[i].latitude
+              };
+              var pointGraphic = new Graphic({
+                geometry: point,
+                attributes: {
+                  "OBJECTID": i,
+                  "registrationID": json.locationData.registrationIDs[0].signals[i].registrationID,
+                  "ipAddress": json.locationData.registrationIDs[0].signals[i].ipAddress,
+                  "flags": json.locationData.registrationIDs[0].signals[i].flags,
+                  "timestamp": json.locationData.registrationIDs[0].signals[i].timestamp
+                }
+              });
+              graphics.push(pointGraphic)
+            }
+            console.log("graphics created");
+            fLayer = createLayer(graphics);
+            
+            map.add(fLayer);
+            
+        }) */
+        
+
+        //  Creates a client-side FeatureLayer from an array of graphics
+        function createLayer(graphics) {
+          //console.log("inside createlayer");
+          //console.log(graphics);
+          return new FeatureLayer({
+            source: graphics,
+            objectIdField: "OBJECTID",
+            fields: [
+              {
+                name: "OBJECTID",
+                type: "oid"
+              },
+              {
+                name: "registrationID",
+                type: "string"
+              },
+              {
+                name: "ipAddress",
+                type: "string"
+              },
+              {
+                name: "flags",
+                type: "integer"
+              },
+              {
+                name: "timestamp",
+                type: "date"
+              }
+            ],
+            popupTemplate: {
+            // autocast as esri/PopupTemplate
+            title: "{RegistrationID} at {timestamp}",
+            content:  "Flags are {flags} </br> ipAddress is {ipAddress}",  
+          },
+            renderer: phoneRenderer
+          });
+        }
+        
+      });
+      
+    </script>
+    <!-- <div class ="panel panel-primary">
+      <div class="panel-heading clearfix">
+        <h4 class="panel-title pull-left" style="padding-top: 7.5px;">Panel header</h4>
+        <div class="btn-group pull right">
+          <button class="btn btn-default btn-sm" id="queryVenntel" >
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" class= "svg-icon" >
+              <path d="M22 0H8.033C6.91 0 6 .944 6 2.11v27.783c0 1.163.911 2.108 2.033 2.108H22c1.122 0 2-.944 2-2.108V2.11C24 .944 23.122 0 22 0zm-7 30.695c-.937 0-1.694-.759-1.694-1.696s.758-1.694 1.694-1.694a1.695 1.695 0 1 1 0 3.39zM22 26H8V4h14v22z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div> -->
+    <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+      <div class="btn-group mr-2" role="group" aria-label="First group">
+        <button class="btn btn-default btn-sm" id="queryVenntel" >
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" class= "svg-icon" >
+            <path d="M22 0H8.033C6.91 0 6 .944 6 2.11v27.783c0 1.163.911 2.108 2.033 2.108H22c1.122 0 2-.944 2-2.108V2.11C24 .944 23.122 0 22 0zm-7 30.695c-.937 0-1.694-.759-1.694-1.696s.758-1.694 1.694-1.694a1.695 1.695 0 1 1 0 3.39zM22 26H8V4h14v22z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="viewDiv" class="esri-widget"></div>
+    <div id="queryDiv" class="esri-widget" style="padding:15px">
+      <b>Query by geometry</b><br />
+      <br />Draw a geometry to query by:
+      <div class="geometry-options">
+        <button
+          class="esri-widget--button esri-icon-map-pin geometry-button"
+          id="point-geometry-button"
+          value="point"
+          title="Query by point"
+        ></button>
+        <button
+          class="esri-widget--button esri-icon-polyline geometry-button"
+          id="line-geometry-button"
+          value="polyline"
+          title="Query by line"
+        ></button>
+        <button
+          class="esri-widget--button esri-icon-polygon geometry-button"
+          id="polygon-geometry-button"
+          value="polygon"
+          title="Query by polygon"
+        ></button>
+      </div>
+      <br />
+      <div class="tooltip">
+        <label for="bufferNum">Set a geometry buffer size:</label>
+        <div id="bufferNum"></div>
+      </div>
+      <br />
+      <button class="esri-button" id="clearGeometry" type="button">
+        Clear
+      </button>
+    </div>
+  </body>
+</html>
