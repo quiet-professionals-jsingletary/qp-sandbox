@@ -186,7 +186,7 @@
     rel="stylesheet"
     href="https://js.arcgis.com/4.15/esri/themes/light/main.css"
   />
-     <!-- ArcGIS JS 4 -->
+     <!-- ArcGIS API JS 4 -->
     <script src="https://js.arcgis.com/4.15/"></script>
     
     <script>
@@ -337,11 +337,14 @@
 
         view.ui.add([queryDiv], "top-right");
 
+        // User Authentication
         var info = new OAuthInfo({
           // Swap this ID out with registered application ID
-          appId: "CnWq7R67sfStKXPc",
-          popup: false
+          appId: "wrEk288tloQDDpVj",
+          popup: false,
+          preserveUrlHash: true
         });
+
         esriId.registerOAuthInfos([info]);
 
         esriId
@@ -352,7 +355,7 @@
           })
           .catch(function() {
             // Anonymous view
-            console.log("catch");
+            console.log("not signed in (catch)");
             //anonPanelElement.style.display = "block";
             //personalPanelElement.style.display = "none";
           });
@@ -389,7 +392,7 @@
             .getElementById("query-ids")
             .addEventListener("click", querybyIDs);
           
-            function toggleVenntelQuery() {
+          function toggleVenntelQuery() {
             console.log(queryDiv.style.display);
             if (queryDiv.style.display == "" || queryDiv.style.display == "none") {
               queryDiv.style.display = "block";
@@ -592,7 +595,7 @@
             // Create query parameters for the portal search
             var queryParams = new PortalQueryParams({
               //query: "owner:" + portal.user.username,
-              query: "tags: venntel type: Feature Service owner:jfraley_ndirt",
+              query: "tags: venntel type: Feature Service owner:jsingletary_qptampa",
               sortField: "numViews",
               sortOrder: "desc",
               num: 20

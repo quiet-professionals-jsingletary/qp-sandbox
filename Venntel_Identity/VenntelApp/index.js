@@ -2,36 +2,8 @@ const express = require('express');
 require('dotenv').config();
 const fetch = require('node-fetch');
 const NodeRSA = require('node-rsa');
-/*
-const keyData = new NodeRSA('-----BEGIN RSA PRIVATE KEY-----\n' +
-'MIIEpAIBAAKCAQEAvfh8AQBjmrFKVIgEZhIqgQMFgCP2q4VQe+UgftRns7HEuQa5\n' +
-'4LnfTDtxhuFZNYIS0mx5tER/1h+wIG94mKcLwtr7Mz3wLkijPDi8TUFMHtsraZfR\n' +
-'4qilblAhol3ywZ2ZTNVXv0UaHP/zXNe0x82/M3BQlSCsXtT95s6SrYU+ttBwk5ia\n' +
-'XjeL5/HEpTvwrwKXYU6vuSWKvfCvCb6iuC/zOAON5Y0n9e5sQ9kSw1gBZ/IoeF19\n' +
-'WyxxYx1upbihRLFBxdgJo7PVfoSyKPvqC60rDazMM7NGeyppP8dQ7hjp7cHKBysZ\n' +
-'A98CHFQO/6gr2VSFckSjB7RL+E0h1mQ+T5usUQIDAQABAoIBACEXX8Js5uzTZTdE\n' +
-'Wj/Neknu1M51dUp7doGecAKnzUin9rSkT0yuFA+bazMrnfaMKestqiWUqRALhQqh\n' +
-'YEh3EL1ol8ldSLFHRef/mg17Cl91niJOp+jrp6WHn9RAuUCwyztvDlHrH5ldnG7X\n' +
-'xE3psRysu9y+TEhYocHKyhIf28TMTP3lpbHq+FlxLD9xPXzML+nUcuzVH7yUIcf5\n' +
-'8Kw4O2+pHHOx2fz97FC/PwpdVxa1mUHUbpdOdAIis+SScIpk9Taw3JZx2uaLbxWV\n' +
-'OxHswbfi+2pzabgjp+OnKxo0ttIW6OxY5aYsi++y6evNNaNzwEmQQFxvIa7cvQ7y\n' +
-'NoyADgECgYEA9uic+ZUSkqMeTrQyb7sd8+9nuFA+tN8vVttyNKUMoL09xHrno4HV\n' +
-'eXtLQVQ71aJsV0u67TehKuZa0imVnwhGwDAPFvYgG6fXI0JbTUAl35gBSVMwr8p7\n' +
-'sa8uM+H1/U+9SDDtDIAFMCBiP0wjkzsy6Xoc/ewHhzr0R0JVz7vWT9kCgYEAxPcq\n' +
-'6I3tqyHPNPxlPp6kTv5FwtFPUlVt9iNFmSvf4GKhor0HKVh45YmvXsNUHECp4G+a\n' +
-'HzbOS6059Gfm+bIoI1HWJlwqY7gJ0lTcKGKVvodTLHcM/We6BLif9V6pzt03Y3IZ\n' +
-'DFtCALYvTuw6HS1wR+RouRh1BKZrbFiDRpm47TkCgYAjs1afL9LTqQpEzwFL7n5S\n' +
-'OxeAKvomJO8vW+OTgRnmU/aOZkb/+VHoks86zvcn2KhZpvWMPzLqhQw0vxaHPCce\n' +
-'utQzubrCxO3yhzG0ZcYUImJtO74abOidtHq1vcJXsiPoQErGN+yIHOaXyGaMb07Z\n' +
-'O3LdtDcSco/HjevicYJ3YQKBgQCxFznxFYrXDvLqRPQStTgt/dhjLSYQdNcFMvlk\n' +
-'mloTuRpy41oJBo7MclrG7QA21rzmGfGMlw4sZHdzE+hMIK6N8wqEOuGx/sp13e6E\n' +
-'MP9J6woRNIjtXdGWZRkM2Cv83lDqjK+QuIxDb4phf2tQyIXnXan6oc60e5yiMYL2\n' +
-'e0gVoQKBgQCSQTlPyNyWAgliWHdFFY0NKNUFE7T6BenLXOou2JjXb5yhF5SVlmqp\n' +
-'OnzWSEBykcG3SSBN3czqi1CBD6RtJC6KdCxhUf53kTeIb9QXaQsr8YcKyEK8deYe\n' +
-'x6Ia9Ne0HNlmoU5e4OFibUDFJ6xr48vH36CgYnhOa6lUe+aRYdAx1g==\n' +
-'-----END RSA PRIVATE KEY-----');
-*/
 
+// ! TODO: Remove Private Keys from code and store them to Key Vault 
 const keyData = new NodeRSA('-----BEGIN RSA PRIVATE KEY-----\n' +
 'MIIEpAIBAAKCAQEAzWJEgVPNXeMVOGNxNbiR1mTw3t1yDQRn7YQ5B3Svuii3A1+8\n' +
 '7CAl0tUIJfc3WaTg8l1Rwskg7p+rnmLIDnRLUak8BiJBobnm6cDSmhWFgNXikew/\n' +
@@ -60,12 +32,13 @@ const keyData = new NodeRSA('-----BEGIN RSA PRIVATE KEY-----\n' +
 'lGbxzxaxp7mt+pq5b9xYnUpw7dnXvSZTYrLsDcDbVn67+rS5zXEwvQ==\n' +
 '-----END RSA PRIVATE KEY-----');
 
+// Init Express Server
 const app = express();
 const port = process.env.PORT || 3000;
 const apiKey = process.env.API_KEY;
 
 app.listen(port, () => {
-  console.log(`Starting server at ${port}`);
+  console.log(`Server started... running on ${port}`);
 });
 app.use(express.static('venntel_integration'));
 
