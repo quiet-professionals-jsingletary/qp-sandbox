@@ -168,6 +168,8 @@
             
       #queryDiv {
         display: none;
+        padding: 15px;
+        background-color: whitesmoke;
       }
       .button-options {
         width: 250px;
@@ -338,11 +340,10 @@
         view.ui.add([queryDiv], "top-right");
 
         // User Authentication
-        var info = new OAuthInfo({
+        let info = new OAuthInfo({
           // Swap this ID out with registered application ID
-          appId: "wrEk288tloQDDpVj",
-          popup: false,
-          preserveUrlHash: true
+          appId: "wrEk288tloQDDpVj", 
+          popup: false
         });
 
         esriId.registerOAuthInfos([info]);
@@ -403,8 +404,8 @@
           }
           function querybyIDs() {
           graphics = []
-          var regIDs = []
-          var endDT = new Date();
+          let regIDs = []
+          let endDT = new Date();
           //var endDT = new Date(new Date().setDate(new Date().getDate()- 151));
           var formatted_enddate = endDT.getFullYear() + "-" + appendLeadingZeroes(endDT.getMonth() + 1) + "-" + appendLeadingZeroes(endDT.getDate()) + "T" + appendLeadingZeroes(endDT.getHours()) + ":" + appendLeadingZeroes(endDT.getMinutes()) + ":" + appendLeadingZeroes(endDT.getSeconds()) + "Z";
           var startDT = new Date(new Date().setDate(new Date().getDate()- 14));
@@ -422,7 +423,7 @@
               regIDs.push(theID);
             }
           }
-          var data = {
+          let data = {
             "startDate": formatted_startdate,
             "endDate": formatted_enddate,
             "registrationIDs": regIDs
