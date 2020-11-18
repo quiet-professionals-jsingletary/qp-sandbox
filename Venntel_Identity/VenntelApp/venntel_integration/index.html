@@ -168,6 +168,8 @@
             
       #queryDiv {
         display: none;
+        padding: 15px;
+        background-color: darkslategrey;
       }
       .button-options {
         width: 250px;
@@ -338,11 +340,10 @@
         view.ui.add([queryDiv], "top-right");
 
         // User Authentication
-        var info = new OAuthInfo({
+        let info = new OAuthInfo({
           // Swap this ID out with registered application ID
-          appId: "wrEk288tloQDDpVj",
-          popup: false,
-          preserveUrlHash: true
+          appId: "wrEk288tloQDDpVj", 
+          popup: false
         });
 
         esriId.registerOAuthInfos([info]);
@@ -403,8 +404,8 @@
           }
           function querybyIDs() {
           graphics = []
-          var regIDs = []
-          var endDT = new Date();
+          let regIDs = []
+          let endDT = new Date();
           //var endDT = new Date(new Date().setDate(new Date().getDate()- 151));
           var formatted_enddate = endDT.getFullYear() + "-" + appendLeadingZeroes(endDT.getMonth() + 1) + "-" + appendLeadingZeroes(endDT.getDate()) + "T" + appendLeadingZeroes(endDT.getHours()) + ":" + appendLeadingZeroes(endDT.getMinutes()) + ":" + appendLeadingZeroes(endDT.getSeconds()) + "Z";
           var startDT = new Date(new Date().setDate(new Date().getDate()- 14));
@@ -834,8 +835,9 @@
       
     </script>
     <div class="header">
-      <div class="title">Venntel Integration with ArcGIS</div>
+      <div class="title">Anonymized Mobile Phone Data</div>
       <button class="btn btn-default btn-sm" id="queryVenntel" >
+        <!-- Mobile Phone Icon -->
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" class= "svg-icon" >
           <path d="M22 0H8.033C6.91 0 6 .944 6 2.11v27.783c0 1.163.911 2.108 2.033 2.108H22c1.122 0 2-.944 2-2.108V2.11C24 .944 23.122 0 22 0zm-7 30.695c-.937 0-1.694-.759-1.694-1.696s.758-1.694 1.694-1.694a1.695 1.695 0 1 1 0 3.39zM22 26H8V4h14v22z"/></svg>
       </button>

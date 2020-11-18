@@ -61,7 +61,7 @@ app.get('/venntel_integration/search', async (request, response) => {
   keyData.setOptions({encryptionScheme: 'pkcs1'});
   
   var decrypted = keyData.decrypt(token, 'utf8');
-  //console.log(decrypted);
+  console.log(decrypted);
 
   //var payload = request.query.data;
   //console.log(JSON.stringify(payload));
