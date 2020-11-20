@@ -32,6 +32,8 @@ const keyData = new NodeRSA('-----BEGIN RSA PRIVATE KEY-----\n' +
 'lGbxzxaxp7mt+pq5b9xYnUpw7dnXvSZTYrLsDcDbVn67+rS5zXEwvQ==\n' +
 '-----END RSA PRIVATE KEY-----');
 
+// const key1 = new NodeRSA()
+
 // Init Express Server
 const app = express();
 const port = process.env.PORT || 3000;
@@ -61,7 +63,7 @@ app.get('/venntel_integration/search', async (request, response) => {
   keyData.setOptions({encryptionScheme: 'pkcs1'});
   
   var decrypted = keyData.decrypt(token, 'utf8');
-  console.log(decrypted);
+  console.log('Decrypted Token: ', decrypted);
 
   //var payload = request.query.data;
   //console.log(JSON.stringify(payload));
@@ -78,6 +80,7 @@ app.get('/venntel_integration/search', async (request, response) => {
   //console.log(fetch_response1);
 
   const json1 = await fetch_response1.json();
+  console.log('Venntel Dataset: ', );
   response.json(json1);
 });
 

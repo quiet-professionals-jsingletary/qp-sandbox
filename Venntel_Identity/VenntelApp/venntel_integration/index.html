@@ -189,13 +189,14 @@
     href="https://js.arcgis.com/4.15/esri/themes/light/main.css"
   />
      <!-- ArcGIS API JS 4 -->
-    <script src="https://js.arcgis.com/4.15/"></script>
+    <script src="https://js.arcgis.com/4.17/"></script>
     
     <script>
       var app;
 
       require([
         "esri/Map",
+        "esri/WebMap",
         "esri/request",
         "esri/views/MapView",
         "esri/portal/Portal",
@@ -209,7 +210,7 @@
         "esri/layers/GraphicsLayer",
         "esri/Graphic",
 
-      ], function(Map, esriRequest, MapView, Portal, OAuthInfo, esriId, PortalQueryParams, Layer,
+      ], function(Map, WebMap, esriRequest, MapView, Portal, OAuthInfo, esriId, PortalQueryParams, Layer,
                   PortalItem, intl, FeatureLayer, GraphicsLayer, Graphic) {
         var template =
           '<div data-itemid="{id}" class="card block" draggable="true">' +
@@ -224,7 +225,34 @@
           "{owner}" +
           "</ul>" +
           "</div>" +
-          "</div>"; 
+          "</div>";
+
+          // Array of Portal Items for Layers!
+          var layerItemsTest = [
+            "94d4076123b74f9fa187c6c9284cee9c"
+            // "f535a6242eca4f6bad8405be9e41aba4", // brewery locations
+            // "48c86debf28a401c8858d714cf85e859" // accidental deaths
+          ];
+          
+          
+          // A WebMap must reference a PortalItem ID that represents a WebMap
+          var webmapTest = new WebMap({
+            basemap: "gray-vector",
+            portalItem: {
+              // autocasts as new PortalItem()
+              id: "58fd54c2ec7741249082171bb9ed8ddc" 
+              //Map: 772e988e4e3848db85cfb4e0bfee111e
+            }
+          });
+          
+          // Set the WebMap instance to the map property in a MapView
+          var viewTest = new MapView({
+            map: webmapTest, // The WebMap instance created above
+            container: "viewDiv"
+          });
+
+
+
         var map = new Map({
           basemap: "gray-vector"
         });
@@ -329,7 +357,7 @@
         var view = new MapView({
           center: [-77.21, 38.91],
           zoom: 12,
-          map: map,
+          map: webmapTest,
           padding: padding,
           container: "viewDiv",
           popup: {
@@ -346,6 +374,7 @@
           popup: false
         });
 
+        // esriId: IdentityManager
         esriId.registerOAuthInfos([info]);
 
         esriId
@@ -525,7 +554,7 @@
             for (var i=0; i< graphics.length; i++){
               if (processCounter == 1000){
                 patternsLayer = createLayer1(setGraphics, "Patterns", 10);
-                map.add(patternsLayer);
+                webmapTest.add(patternsLayer);
                 setGraphics = [];
                 //console.log("created patternsLayer");
               }
@@ -593,10 +622,11 @@
           portal.authMode = "immediate";
           // Once loaded, user is signed in
           portal.load().then(function() {
+            console.log(portal);
             // Create query parameters for the portal search
             var queryParams = new PortalQueryParams({
               //query: "owner:" + portal.user.username,
-              query: "tags: venntel type: Feature Service owner:jsingletary_qptampa",
+              query: "tags: venntel type: Feature Service owner: jsingletary_qptampa",
               sortField: "numViews",
               sortOrder: "desc",
               num: 20
@@ -611,7 +641,7 @@
         //Query for devices based on point features on the map
         function queryDevices(){
           graphics = []
-          var ptLocationsLayer = map.layers.items[0];
+          var ptLocationsLayer = webmapTest.layers.items[0];
           ptLocationsLayer.queryFeatures().then(function(results){
             //console.log(results.features.length);
             lString = [];
@@ -677,12 +707,11 @@
               resultsLayer = createLayer(graphics, "Results", 11);
               listOfIDs = theSignalCounts.sort((a, b) => Number(b.signalcount) - Number(a.signalcount));
               console.log(listOfIDs);
-              map.add(resultsLayer); 
+              webmapTest.add(resultsLayer); 
             });
           });
         }
-
-       
+        
         function appendLeadingZeroes(n){
           if(n <= 9){
             return "0" + n;
@@ -728,7 +757,7 @@
           }
         });
         }
-        //  Creates a client-side FeatureLayer from an array of graphics
+        // Creates a client-side FeatureLayer from an array of graphics
         function createLayer(graphics) {
           //console.log(graphics);
           return new FeatureLayer({
@@ -765,6 +794,7 @@
           });
         }
         
+        // Drag & Drop Functionality
         function createList(items){
             console.log(items.total);
             var docFrag = document.createDocumentFragment();
@@ -824,7 +854,7 @@
                   /************************************************************
                    * Add the layer to the map and zoom to its extent.
                    ************************************************************/
-                  map.add(layer);
+                  webmapTest.add(layer);
                   //view.extent = item.extent;
                 });
               }
