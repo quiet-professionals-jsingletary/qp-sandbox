@@ -60,6 +60,8 @@ app.get('/venntel_integration/search', async (request, response) => {
   
   const json = await fetch_response.json();
   token = json.tempSecurityEncryptedToken;
+  console.log('tempSecurityEncryptedToken: ', token);
+  
   keyData.setOptions({encryptionScheme: 'pkcs1'});
   
   var decrypted = keyData.decrypt(token, 'utf8');
@@ -112,10 +114,12 @@ app.get('/info', async (request, response) => {
   
   const headers = {'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'Authorization': 'cd1c0531-7710-46f9-b6f8-e636065016e9'
+    'Authorization': '995dba95-c33d-456b-a7ea-3fd512e60894'
     };
   //console.log(url);
   const fetch_response = await fetch(url, {method: 'GET', headers: headers});
+
+  
   
   const json = await fetch_response.json();
   token = json.tempSecurityEncryptedToken;
@@ -138,7 +142,7 @@ app.get('/info', async (request, response) => {
   theHeaders = {        
     'Content-Type': "application/json",
     'Accept': "application/json",
-    'Authorization': "cd1c0531-7710-46f9-b6f8-e636065016e9",
+    'Authorization': "995dba95-c33d-456b-a7ea-3fd512e60894",
     'TempSecurityToken': decrypted
   };
   var fetch_response1 = await fetch(searchURL, {method: 'POST', headers: theHeaders, body: JSON.stringify(payload)});
