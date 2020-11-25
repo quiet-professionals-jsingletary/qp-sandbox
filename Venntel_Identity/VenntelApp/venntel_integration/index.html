@@ -193,6 +193,7 @@
     
     <script>
       var app;
+      var view;
 
       require([
         "esri/Map",
@@ -227,37 +228,50 @@
           "</div>" +
           "</div>";
 
-          // Array of Portal Items for Layers!
-          var layerItemsTest = [
-            "5348db3207e14141915f6afd02806a62" // Canada and Mexico Border Crossings
-            // "f535a6242eca4f6bad8405be9e41aba4", // brewery locations
-            // "48c86debf28a401c8858d714cf85e859" // accidental deaths
-          ];
-          
-          
-          // A WebMap must reference a PortalItem ID that represents a WebMap
-          var webmapTest = new WebMap({
-            basemap: "gray-vector",
-            portalItem: {
-              // autocasts as new PortalItem()
-              id: "58fd54c2ec7741249082171bb9ed8ddc" 
-              //Map: 772e988e4e3848db85cfb4e0bfee111e
-            }
-          });
-          
-          // Set the WebMap instance to the map property in a MapView
-          var viewTest = new MapView({
-            map: webmapTest, // The WebMap instance created above
-            container: "viewDiv"
-          });
-
-
+        // Array of Portal Items (Layers)
+        // var layerItemsTest = [
+        //   "5348db3207e14141915f6afd02806a62" // Canada and Mexico Border Crossings
+        //   // "f535a6242eca4f6bad8405be9e41aba4", // brewery locations
+        //   // "48c86debf28a401c8858d714cf85e859" // accidental deaths
+        // ];
 
         var map = new Map({
           basemap: "gray-vector"
         });
-        // Padding
+        
+        // A WebMap must reference a PortalItem ID that represents a WebMap
+        // var webmapTest = new WebMap({
+        //   portalItem: {
+        //     // autocasts as new PortalItem()
+        //     // id: "58fd54c2ec7741249082171bb9ed8ddc"
+        //     id: "78d3575b4ca24e09afa4d1ef6b644f53"
+        //     //Map: 772e988e4e3848db85cfb4e0bfee111e
+        //   }
+        // });
+        
+        // Set the WebMap instance to the map property in a MapView
+        // viewTest = new MapView({
+        //   map: map, // The Map instance created above
+        //   container: "viewDiv"
+        // });
 
+        // Portals
+        // let portalA = new Portal({
+        //   url: "" // First instance
+        // });
+
+        // let portalItem = new PortalItem({
+        //   id: "78d3575b4ca24e09afa4d1ef6b644f53",
+        //   portal: portalA
+        // });
+
+        let bordersLayer = new FeatureLayer({
+          url: "https://geo.dot.gov/server/rest/services/Hosted/Border_Crossings_DS/FeatureServer/0"
+        });
+
+        console.log('Feature Layer: ', bordersLayer);
+
+        // Padding
         var padding = { top: 55 };
         var paddingExpanded = { top: 55, right: 250 };
 
@@ -333,7 +347,7 @@
       var phoneRenderer = {
           type: "simple",  // autocasts as new SimpleRenderer()
           symbol: {
-            type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()
+            type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()  
             size: 6,
             color: "blue",
             outline: {  // autocasts as new SimpleLineSymbol()
@@ -354,16 +368,20 @@
             }
           }
         }; 
-        var view = new MapView({
-          center: [-77.21, 38.91],
-          zoom: 12,
-          map: webmapTest,
+        view = new MapView({
+          //center: [-77.21, 38.91],
+          zoom: 2,
+          map: map,
           padding: padding,
           container: "viewDiv",
           popup: {
             defaultPopupTemplateEnabled: true
           }
         }); 
+
+        // view.when(() => {
+        //   map.add(bordersLayer);
+        // });
 
         view.ui.add([queryDiv], "top-right");
 
@@ -376,6 +394,8 @@
 
         // esriId: IdentityManager
         esriId.registerOAuthInfos([info]);
+
+        console.log("OAuthInfo: ", info);
 
         esriId
           .checkSignInStatus(info.portalUrl + "/sharing")
@@ -403,25 +423,26 @@
           }
         });
 
-          document
-            .getElementById("sign-in")
-            .addEventListener("click", function() {
-              console.log("clicked");
-              esriId.getCredential(info.portalUrl + "/sharing");
-          });
+        document
+          .getElementById("sign-in")
+          .addEventListener("click", function() {
+            console.log("clicked");
+            esriId.getCredential(info.portalUrl + "/sharing");
+        });
 
-          document
-          .getElementById("queryVenntel")
-          .addEventListener("click", toggleVenntelQuery);
-          
-          document
-          .getElementById("searchGeometry")
-          .addEventListener("click", queryDevices);
-         
-          document
-            .getElementById("query-ids")
-            .addEventListener("click", querybyIDs);
-          
+        document
+        .getElementById("queryVenntel")
+        .addEventListener("click", toggleVenntelQuery);
+        
+        document
+        .getElementById("searchGeometry")
+        .addEventListener("click", queryDevices);
+        
+        document
+          .getElementById("query-ids")
+          .addEventListener("click", querybyIDs);
+
+        // #region [default] Venntel Integration
           function toggleVenntelQuery() {
             console.log(queryDiv.style.display);
             if (queryDiv.style.display == "" || queryDiv.style.display == "none") {
@@ -554,7 +575,7 @@
             for (var i=0; i< graphics.length; i++){
               if (processCounter == 1000){
                 patternsLayer = createLayer1(setGraphics, "Patterns", 10);
-                webmapTest.add(patternsLayer);
+                map.add(patternsLayer);
                 setGraphics = [];
                 //console.log("created patternsLayer");
               }
@@ -616,6 +637,7 @@
             renderer: uniquePhonesRenderer
           });
         }
+
         function displayItems() {
           var portal = new Portal();
           // Setting authMode to immediate signs the user in once loaded
@@ -626,7 +648,7 @@
             // Create query parameters for the portal search
             var queryParams = new PortalQueryParams({
               //query: "owner:" + portal.user.username,
-              query: "tags: venntel type: Feature Service owner: jsingletary_qptampa",
+              query: "tags: venntel type: Feature Service owner: heather_qptampa",
               sortField: "numViews",
               sortOrder: "desc",
               num: 20
@@ -638,10 +660,11 @@
             portal.queryItems(queryParams).then(createList);
           });
         }
-        //Query for devices based on point features on the map
+        
+        // NOTE: Query Venntel for devices based on point features on the map
         function queryDevices(){
           graphics = []
-          var ptLocationsLayer = webmapTest.layers.items[0];
+          var ptLocationsLayer = map.layers.items[0];
           ptLocationsLayer.queryFeatures().then(function(results){
             //console.log(results.features.length);
             lString = [];
@@ -707,10 +730,11 @@
               resultsLayer = createLayer(graphics, "Results", 11);
               listOfIDs = theSignalCounts.sort((a, b) => Number(b.signalcount) - Number(a.signalcount));
               console.log(listOfIDs);
-              webmapTest.add(resultsLayer); 
+              map.add(resultsLayer); 
             });
           });
         }
+        //#endregion
 
         function appendLeadingZeroes(n){
           if(n <= 9){
@@ -719,6 +743,7 @@
           return n
         }
 
+        // #region Map Layers
         function createAreasLayer() {
           return new FeatureLayer({
             title: "searchAreas",
@@ -854,13 +879,14 @@
                   /************************************************************
                    * Add the layer to the map and zoom to its extent.
                    ************************************************************/
-                  webmapTest.add(layer);
+                  map.add(layer);
                   //view.extent = item.extent;
                 });
               }
               });
             });
         }
+        // #endregion
       });
       
     </script>
