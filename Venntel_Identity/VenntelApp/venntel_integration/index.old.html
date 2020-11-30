@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 
   <!-- ArcGIS JS 4 -->
-  <link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/themes/dark/main.css" />
+  <link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/themes/dark/main.css" />
 
   <style>
     html,
@@ -168,8 +168,6 @@
 
     #queryDiv {
       display: none;
-      padding: 15px;
-      background-color: darkslategrey;
     }
 
     .button-options {
@@ -186,19 +184,15 @@
     }
   </style>
 </head>
-<link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/themes/light/main.css" />
-<!-- ArcGIS API JS 4 -->
-<script src="https://js.arcgis.com/4.17/"></script>
+<link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/themes/light/main.css" />
+<!-- ArcGIS JS 4 -->
+<script src="https://js.arcgis.com/4.15/"></script>
 
 <script>
-  var app,
-    view;
+  var app;
 
   require([
-    "esri/config",
-    "esri/core/promiseUtils",
     "esri/Map",
-    "esri/WebMap",
     "esri/request",
     "esri/views/MapView",
     "esri/portal/Portal",
@@ -211,17 +205,9 @@
     "esri/layers/FeatureLayer",
     "esri/layers/GraphicsLayer",
     "esri/Graphic",
-    // IE11 shim for Array
-    "@dojo/framework/shim/array"
 
-  ], function (esriConfig, promiseUtils, Map, WebMap, esriRequest, MapView, Portal, OAuthInfo, esriId, PortalQueryParams, Layer,
+  ], function (Map, esriRequest, MapView, Portal, OAuthInfo, esriId, PortalQueryParams, Layer,
     PortalItem, intl, FeatureLayer, GraphicsLayer, Graphic) {
-
-    /************************************************************
-     * Creates a template to display Portal Item Information.
-     * Any values enclosed in "{}" will be parsed with properties
-     * from an object using the utility method esri/intl::substitute
-     ************************************************************/
     var template =
       '<div data-itemid="{id}" class="card block" draggable="true">' +
       '<figure class="card-image-wrap"><img class="card-image" src="{thumbnailUrl}" alt="Card Thumbnail">' +
@@ -236,86 +222,12 @@
       "</ul>" +
       "</div>" +
       "</div>";
-
+    
     esriConfig.portalUrl = "https://qptampa.maps.arcgis.com/";
 
-    // User Authentication
-    var info = new OAuthInfo({
-      // Swap this ID out with registered application ID
-      appId: "wrEk288tloQDDpVj",
-      portalUrl: "https://qptampa.maps.arcgis.com/",
-      popup: false
-    });
-
-    // esriId: IdentityManager
-    esriId.registerOAuthInfos([info]);
-
-    console.log("OAuthInfo: ", esriId);
-
-    esriId
-      .checkSignInStatus(info.portalUrl + "/sharing")
-      .then(function () {
-        console.log("signed in");
-        displayItems();
-      })
-      .catch(function () {
-        // Anonymous view
-        console.log("not signed in (catch)");
-        //anonPanelElement.style.display = "block";
-        //personalPanelElement.style.display = "none";
-      });
-    
     var map = new Map({
       basemap: "gray-vector"
     });
-
-    // Array of Portal Items (Layers)
-    // var layerItemsTest = [
-    //   "5348db3207e14141915f6afd02806a62" // Canada and Mexico Border Crossings
-    //   // "f535a6242eca4f6bad8405be9e41aba4", // brewery locations
-    //   // "48c86debf28a401c8858d714cf85e859" // accidental deaths
-    // ];
-    
-    // var webMap = new WebMap({
-    //   portalItem: {
-    //     // autocasts as new PortalItem()
-    //     id: "5348db3207e14141915f6afd02806a62"
-    //   }
-    // });
-    
-
-    // A WebMap must reference a PortalItem ID that represents a WebMap
-    // var webmapTest = new WebMap({
-    //   portalItem: {
-    //     // autocasts as new PortalItem()
-    //     // id: "58fd54c2ec7741249082171bb9ed8ddc"
-    //     id: "78d3575b4ca24e09afa4d1ef6b644f53"
-    //     //Map: 772e988e4e3848db85cfb4e0bfee111e
-    //   }
-    // });
-
-
-    // Set the WebMap instance to the map property in a MapView
-    // view = new MapView({
-    //   map: map, // The Map instance created above
-    //   container: "viewDiv"
-    // });
-
-    // Portals
-    // let portalA = new Portal({
-    //   url: "" // First instance
-    // });
-
-    // let portalItem = new PortalItem({
-    //   id: "78d3575b4ca24e09afa4d1ef6b644f53",
-    //   portal: portalA
-    // });
-
-    // let bordersLayer = new FeatureLayer({
-    //   url: "https://geo.dot.gov/server/rest/services/Hosted/Border_Crossings_DS/FeatureServer/0"
-    // });
-
-    // console.log('Feature Layer: ', bordersLayer);
 
     // Padding
     var padding = { top: 55 };
@@ -393,7 +305,7 @@
     var phoneRenderer = {
       type: "simple",  // autocasts as new SimpleRenderer()
       symbol: {
-        type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()  
+        type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()
         size: 6,
         color: "blue",
         outline: {  // autocasts as new SimpleLineSymbol()
@@ -414,23 +326,39 @@
         }
       }
     };
-    
-    view = new MapView({
-      //center: [-77.21, 38.91],
-      zoom: 5,
-      map: map,
-      padding: padding,
-      container: "viewDiv",
-      popup: {
-        defaultPopupTemplateEnabled: true
-      }
-    });
-
-    // view.when(() => {
-    //   map.add(bordersLayer);
+    // var view = new MapView({
+    //   center: [-77.21, 38.91],
+    //   zoom: 12,
+    //   map: map,
+    //   padding: padding,
+    //   container: "viewDiv",
+    //   popup: {
+    //     defaultPopupTemplateEnabled: true
+    //   }
     // });
 
     view.ui.add([queryDiv], "top-right");
+
+    var info = new OAuthInfo({
+      // Swap this ID out with registered application ID
+      appId: "CnWq7R67sfStKXPc",
+      portalUrl: "https://qptampa.maps.arcgis.com/",
+      popup: false
+    });
+    esriId.registerOAuthInfos([info]);
+
+    esriId
+      .checkSignInStatus(info.portalUrl + "/sharing")
+      .then(function () {
+        console.log("signed in");
+        displayItems();
+      })
+      .catch(function () {
+        // Anonymous view
+        console.log("catch");
+        //anonPanelElement.style.display = "block";
+        //personalPanelElement.style.display = "none";
+      });
 
     document.getElementById("addData").addEventListener("click", function () {
       var expanded = panel.classList.contains("panel-expanded");
@@ -448,7 +376,7 @@
     document
       .getElementById("sign-in")
       .addEventListener("click", function () {
-        console.log("clicked");
+        console.log("signing in...");
         esriId.getCredential(info.portalUrl + "/sharing");
       });
 
@@ -464,7 +392,6 @@
       .getElementById("query-ids")
       .addEventListener("click", querybyIDs);
 
-    // #region [blue] Venntel Integration
     function toggleVenntelQuery() {
       console.log(queryDiv.style.display);
       if (queryDiv.style.display == "" || queryDiv.style.display == "none") {
@@ -476,8 +403,8 @@
     }
     function querybyIDs() {
       graphics = []
-      let regIDs = []
-      let endDT = new Date();
+      var regIDs = []
+      var endDT = new Date();
       //var endDT = new Date(new Date().setDate(new Date().getDate()- 151));
       var formatted_enddate = endDT.getFullYear() + "-" + appendLeadingZeroes(endDT.getMonth() + 1) + "-" + appendLeadingZeroes(endDT.getDate()) + "T" + appendLeadingZeroes(endDT.getHours()) + ":" + appendLeadingZeroes(endDT.getMinutes()) + ":" + appendLeadingZeroes(endDT.getSeconds()) + "Z";
       var startDT = new Date(new Date().setDate(new Date().getDate() - 14));
@@ -659,18 +586,16 @@
         renderer: uniquePhonesRenderer
       });
     }
-
     function displayItems() {
       var portal = new Portal();
       // Setting authMode to immediate signs the user in once loaded
       portal.authMode = "immediate";
       // Once loaded, user is signed in
       portal.load().then(function () {
-        console.log(portal);
         // Create query parameters for the portal search
         var queryParams = new PortalQueryParams({
           query: "owner:" + portal.user.username,
-          // query: "tags: venntel type: Feature Service owner: heather_qptampa",
+          // query: "tags: venntel type: Feature Service owner:jfraley_ndirt",
           sortField: "numViews",
           sortOrder: "desc",
           num: 20
@@ -682,8 +607,7 @@
         portal.queryItems(queryParams).then(createList);
       });
     }
-
-    // NOTE: Query Venntel for devices based on point features on the map
+    //Query for devices based on point features on the map
     function queryDevices() {
       graphics = []
       var ptLocationsLayer = map.layers.items[0];
@@ -756,7 +680,7 @@
         });
       });
     }
-    //#endregion
+
 
     function appendLeadingZeroes(n) {
       if (n <= 9) {
@@ -765,7 +689,6 @@
       return n
     }
 
-    // #region Map Layers
     function createAreasLayer() {
       return new FeatureLayer({
         title: "searchAreas",
@@ -804,7 +727,7 @@
         }
       });
     }
-    // Creates a client-side FeatureLayer from an array of graphics
+    //  Creates a client-side FeatureLayer from an array of graphics
     function createLayer(graphics) {
       //console.log(graphics);
       return new FeatureLayer({
@@ -841,7 +764,6 @@
       });
     }
 
-    // Drag & Drop Functionality
     function createList(items) {
       console.log(items.total);
       var docFrag = document.createDocumentFragment();
@@ -908,14 +830,12 @@
         });
       });
     }
-    // #endregion
   });
 
 </script>
 <div class="header">
-  <div class="title">Anonymized Mobile Phone Data</div>
+  <div class="title">Venntel Integration with ArcGIS</div>
   <button class="btn btn-default btn-sm" id="queryVenntel">
-    <!-- Mobile Phone Icon -->
     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" class="svg-icon">
       <path
         d="M22 0H8.033C6.91 0 6 .944 6 2.11v27.783c0 1.163.911 2.108 2.033 2.108H22c1.122 0 2-.944 2-2.108V2.11C24 .944 23.122 0 22 0zm-7 30.695c-.937 0-1.694-.759-1.694-1.696s.758-1.694 1.694-1.694a1.695 1.695 0 1 1 0 3.39zM22 26H8V4h14v22z" />
@@ -925,14 +845,13 @@
   <button class="btn btn-default btn-sm" id="sign-in">Sign In</button>
 </div>
 <div id="viewDiv"></div>
-<!-- Custom Layer Panel -->
+<!-- Custom Panel -->
 <div id="panel">
   <label class="description"><b>Instructions:</b><br /></label>
   <label class="description">Drag portal items to the Map<br /></label>
   <label class="description"></label>
   <div class="cards-list"></div>
 </div>
-<!-- Venntel Panel -->
 <div id="queryDiv" class="queryDiv-container esri-widget--panel">
   <br />Enter distance to buffer in meters<br />
   <input type="text" id="inputDistance" styel="widgth:30px;" value="50" /><br />
