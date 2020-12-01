@@ -82,7 +82,7 @@ app.get('/venntel_integration/search', async (request, response) => {
   //console.log(fetch_response1);
 
   const json1 = await fetch_response1.json();
-  console.log('Venntel Dataset: ', );
+  console.log('Venntel Dataset: ', json1);
   response.json(json1);
 });
 
