@@ -195,6 +195,7 @@
       var app;
 
       require([
+        "esri/config",
         "esri/Map",
         "esri/WebMap",
         "esri/request",
@@ -210,7 +211,7 @@
         "esri/layers/GraphicsLayer",
         "esri/Graphic",
 
-      ], function(Map, WebMap, esriRequest, MapView, Portal, OAuthInfo, esriId, PortalQueryParams, Layer,
+      ], function(esriConfig, Map, WebMap, esriRequest, MapView, Portal, OAuthInfo, esriId, PortalQueryParams, Layer,
                   PortalItem, intl, FeatureLayer, GraphicsLayer, Graphic) {
         var template =
           '<div data-itemid="{id}" class="card block" draggable="true">' +
@@ -226,6 +227,21 @@
           "</ul>" +
           "</div>" +
           "</div>";
+          
+
+          // `<div data-itemid=${id} class="card block" draggable="true">
+          //   <figure class="card-image-wrap"><img class="card-image" src=${thumbnailUrl} alt="Card Thumbnail">
+          //     <figcaption class="card-image-caption">${title}</figcaption>
+          //   </figure>
+          //   <div class="card-content">
+          //     <ul>
+          //       <li>Published Date:</li> ${created}
+          //       <li>Owner:</li> ${owner}
+          //     </ul>
+          //   </div>
+          // </div>`
+
+        esriConfig.portalUrl = "https://qptampa.maps.arcgis.com/";
 
           // Array of Portal Items for Layers!
           var layerItemsTest = [
@@ -256,6 +272,36 @@
         var map = new Map({
           basemap: "gray-vector"
         });
+<<<<<<< HEAD
+=======
+        
+        // A WebMap must reference a PortalItem ID that represents a WebMap
+        // var webmapTest = new WebMap({
+        //   portalItem: {
+        //     // autocasts as new PortalItem()
+        //     // id: "58fd54c2ec7741249082171bb9ed8ddc"
+        //     id: "78d3575b4ca24e09afa4d1ef6b644f53"
+        //     //Map: 772e988e4e3848db85cfb4e0bfee111e
+        //   }
+        // });
+        
+        // Set the WebMap instance to the map property in a MapView
+        // viewTest = new MapView({
+        //   map: map, // The Map instance created above
+        //   container: "viewDiv"
+        // });
+
+        // Portals
+        // let portalA = new Portal({
+        //   url: "" // First instance
+        // });
+
+        // let portalItem = new PortalItem({
+        //   id: "78d3575b4ca24e09afa4d1ef6b644f53",
+        //   portal: portalA
+        // });
+
+>>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
         // Padding
 
         var padding = { top: 55 };
@@ -354,10 +400,18 @@
             }
           }
         }; 
+<<<<<<< HEAD
         var view = new MapView({
           center: [-77.21, 38.91],
           zoom: 12,
           map: webmapTest,
+=======
+        
+        view = new MapView({
+          center: [-77.21, 38.91],
+          zoom: 2,
+          map: map,
+>>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
           padding: padding,
           container: "viewDiv",
           popup: {
@@ -370,7 +424,8 @@
         // User Authentication
         let info = new OAuthInfo({
           // Swap this ID out with registered application ID
-          appId: "wrEk288tloQDDpVj", 
+          appId: "wrEk288tloQDDpVj",
+          portalUrl: "https://qptampa.maps.arcgis.com/",
           popup: false
         });
 
@@ -403,6 +458,7 @@
           }
         });
 
+<<<<<<< HEAD
           document
             .getElementById("sign-in")
             .addEventListener("click", function() {
@@ -422,6 +478,28 @@
             .getElementById("query-ids")
             .addEventListener("click", querybyIDs);
           
+=======
+        document
+          .getElementById("sign-in")
+          .addEventListener("click", function() {
+            console.log("sign-in btn clicked");
+            esriId.getCredential(info.portalUrl + "/sharing");
+        });
+
+        document
+        .getElementById("queryVenntel")
+        .addEventListener("click", toggleVenntelQuery);
+        
+        document
+        .getElementById("searchGeometry")
+        .addEventListener("click", queryDevices);
+        
+        document
+          .getElementById("query-ids")
+          .addEventListener("click", querybyIDs);
+
+        // #region [blue] Venntel Integration
+>>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
           function toggleVenntelQuery() {
             console.log(queryDiv.style.display);
             if (queryDiv.style.display == "" || queryDiv.style.display == "none") {
@@ -625,8 +703,13 @@
             console.log(portal);
             // Create query parameters for the portal search
             var queryParams = new PortalQueryParams({
+<<<<<<< HEAD
               //query: "owner:" + portal.user.username,
               query: "tags: venntel type: Feature Service owner: jsingletary_qptampa",
+=======
+              query: "owner:" + portal.user.username,
+              // query: "tags: venntel type: Feature Service owner: heather_qptampa",
+>>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
               sortField: "numViews",
               sortOrder: "desc",
               num: 20
@@ -861,6 +944,112 @@
               });
             });
         }
+<<<<<<< HEAD
+=======
+
+        function createListNew(items){
+          /************************************************************
+           * Wait for the MapView to finish loading and create an array
+           * of PortalItems.
+           ************************************************************/
+          view.when(function () {
+            var portalItems = items.results.map(function (itemid) {
+              /************************************************************
+               * We want to load the PortalItem right away so that we can
+               * read the data, such as "id", "owner", "title", and "created".
+               * This does not load the Layer itself, but returns a Promise.
+               ************************************************************/
+              return new PortalItem({
+                id: itemid
+              }).load();
+            });
+            /************************************************************
+             * Use promiseUtils.eachAlways to wait for all of the
+             * PortalItem Promises to complete loading.
+             ************************************************************/
+            promiseUtils.eachAlways(portalItems).then(function (items) {
+              /************************************************************
+               * Create a DocumentFragment to hold our list elements
+               * until we are ready to add them to the page.
+               ************************************************************/
+              var docFrag = document.createDocumentFragment();
+              items.map(function (result) {
+                var item = result.value;
+                /************************************************************
+                 * Use esri/intl::substitute will create a new string
+                 * using properties from the PortalItem.
+                 ************************************************************/
+                var card = intl.substitute(template, item);
+                /************************************************************
+                 * Create a "div" element to hold the new string from the
+                 * template and get the new node from that element to append
+                 * it to the DocumentFragment.
+                 ************************************************************/
+                var elem = document.createElement("div");
+                elem.innerHTML = card;
+                // This is a technique to turn a DOM string to a DOM element.
+                var target = elem.firstChild;
+                docFrag.appendChild(target);
+                /************************************************************
+                 * Listen for the "dragstart" event on the list item.
+                 ************************************************************/
+                target.addEventListener("dragstart", function (event) {
+                  /************************************************************
+                   * Get the data attribute from the element and pass it along
+                   * as the data being transferred in the drag event.
+                   ************************************************************/
+                  var id = event.currentTarget.getAttribute("data-itemid");
+                  event.dataTransfer.setData("text", id);
+                });
+              });
+              /************************************************************
+               * Append the list item to the page.
+               ************************************************************/
+              document.querySelector(".cards-list").appendChild(docFrag);
+              /************************************************************
+               * Listen for "drop" and "dragover" events on the container
+               * of the View.
+               ************************************************************/
+              view.container.addEventListener("dragover", function (event) {
+                event.preventDefault();
+                /************************************************************
+                 * On "dragover", you need to specify the dropEffect to drop
+                 * items to an element while dragging.
+                 ************************************************************/
+                event.dataTransfer.dropEffect = "copy";
+              });
+              view.container.addEventListener("drop", function (event) {
+                event.preventDefault();
+                /************************************************************
+                 * Element has been dropped into container. Get the "id"
+                 * that was transferred and find it in the item list.
+                 ************************************************************/
+                var id = event.dataTransfer.getData("text");
+                var resultItem = items.find(function (x) {
+                  return x.value.id === id;
+                });
+                var item = resultItem.value;
+                /************************************************************
+                 * If the item is a Layer item, create a Layer using
+                 * Layer.fromPortalItem.
+                 ************************************************************/
+                if (item && item.isLayer) {
+                  Layer.fromPortalItem({
+                    portalItem: item
+                  }).then(function (layer) {
+                    /************************************************************
+                     * Add the layer to the map and zoom to its extent.
+                     ************************************************************/
+                    map.add(layer);
+                    view.extent = item.extent;
+                  });
+                }
+              });
+            });
+          });
+        }
+        // #endregion
+>>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
       });
       
     </script>
@@ -876,7 +1065,7 @@
     </div>
     <div id="viewDiv"></div>
     <!-- Custom Panel -->
-    <div id="panel">
+    <div id="panel"class="esri-widget">
       <label class="description"><b>Instructions:</b><br /></label>
       <label class="description">Drag portal items to the Map<br /></label>
       <label class="description"></label>
@@ -892,7 +1081,7 @@
         <label for="endTime">Start time (date and time):</label><br/>
         <input type="datetime-local" id="endTime" name="endTime"><br/>
         <br />
-        <div class="button-options">
+        <div class="button-optio2ns">
           <button class="esri-button options-button" id="searchGeometry" type="button">
             Search
           </button><br/><br/>
