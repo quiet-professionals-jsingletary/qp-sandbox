@@ -186,16 +186,17 @@
   </head>
   <link
     rel="stylesheet"
-    href="https://js.arcgis.com/4.15/esri/themes/light/main.css"
+    href="https://js.arcgis.com/4.17/esri/themes/light/main.css"
   />
      <!-- ArcGIS API JS 4 -->
-    <script src="https://js.arcgis.com/4.15/"></script>
+    <script src="https://js.arcgis.com/4.17/"></script>
     
     <script>
       var app;
 
       require([
         "esri/config",
+        "esri/core/promiseUtils",
         "esri/Map",
         "esri/WebMap",
         "esri/request",
@@ -211,8 +212,9 @@
         "esri/layers/GraphicsLayer",
         "esri/Graphic",
 
-      ], function(esriConfig, Map, WebMap, esriRequest, MapView, Portal, OAuthInfo, esriId, PortalQueryParams, Layer,
+      ], function(esriConfig, promiseUtils, Map, WebMap, esriRequest, MapView, Portal, OAuthInfo, esriId, PortalQueryParams, Layer,
                   PortalItem, intl, FeatureLayer, GraphicsLayer, Graphic) {
+
         var template =
           '<div data-itemid="{id}" class="card block" draggable="true">' +
           '<figure class="card-image-wrap"><img class="card-image" src="{thumbnailUrl}" alt="Card Thumbnail">' +
@@ -243,37 +245,33 @@
 
         esriConfig.portalUrl = "https://qptampa.maps.arcgis.com/";
 
-          // Array of Portal Items for Layers!
-          var layerItemsTest = [
-            "5348db3207e14141915f6afd02806a62" // Canada and Mexico Border Crossings
-            // "f535a6242eca4f6bad8405be9e41aba4", // brewery locations
-            // "48c86debf28a401c8858d714cf85e859" // accidental deaths
-          ];
-          
-          
-          // A WebMap must reference a PortalItem ID that represents a WebMap
-          var webmapTest = new WebMap({
-            basemap: "gray-vector",
-            portalItem: {
-              // autocasts as new PortalItem()
-              id: "58fd54c2ec7741249082171bb9ed8ddc" 
-              //Map: 772e988e4e3848db85cfb4e0bfee111e
-            }
-          });
-          
-          // Set the WebMap instance to the map property in a MapView
-          var viewTest = new MapView({
-            map: webmapTest, // The WebMap instance created above
-            container: "viewDiv"
-          });
-
-
+        // Array of Portal Items for Layers!
+        // var layerItemsTest = [
+        //   "5348db3207e14141915f6afd02806a62" // Canada and Mexico Border Crossings
+        //   // "f535a6242eca4f6bad8405be9e41aba4", // brewery locations
+        //   // "48c86debf28a401c8858d714cf85e859" // accidental deaths
+        // ];
+        
+        
+        // A WebMap must reference a PortalItem ID that represents a WebMap
+        // var webmapTest = new WebMap({
+        //   basemap: "gray-vector",
+        //   portalItem: {
+        //     // autocasts as new PortalItem()
+        //     id: "58fd54c2ec7741249082171bb9ed8ddc" 
+        //     //Map: 772e988e4e3848db85cfb4e0bfee111e
+        //   }
+        // });
+        
+        // Set the WebMap instance to the map property in a MapView
+        // var viewTest = new MapView({
+        //   map: webmapTest, // The WebMap instance created above
+        //   container: "viewDiv"
+        // });
 
         var map = new Map({
           basemap: "gray-vector"
         });
-<<<<<<< HEAD
-=======
         
         // A WebMap must reference a PortalItem ID that represents a WebMap
         // var webmapTest = new WebMap({
@@ -301,9 +299,7 @@
         //   portal: portalA
         // });
 
->>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
         // Padding
-
         var padding = { top: 55 };
         var paddingExpanded = { top: 55, right: 250 };
 
@@ -400,18 +396,11 @@
             }
           }
         }; 
-<<<<<<< HEAD
-        var view = new MapView({
-          center: [-77.21, 38.91],
-          zoom: 12,
-          map: webmapTest,
-=======
         
         view = new MapView({
           center: [-77.21, 38.91],
           zoom: 2,
           map: map,
->>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
           padding: padding,
           container: "viewDiv",
           popup: {
@@ -458,27 +447,6 @@
           }
         });
 
-<<<<<<< HEAD
-          document
-            .getElementById("sign-in")
-            .addEventListener("click", function() {
-              console.log("clicked");
-              esriId.getCredential(info.portalUrl + "/sharing");
-          });
-
-          document
-          .getElementById("queryVenntel")
-          .addEventListener("click", toggleVenntelQuery);
-          
-          document
-          .getElementById("searchGeometry")
-          .addEventListener("click", queryDevices);
-         
-          document
-            .getElementById("query-ids")
-            .addEventListener("click", querybyIDs);
-          
-=======
         document
           .getElementById("sign-in")
           .addEventListener("click", function() {
@@ -498,8 +466,7 @@
           .getElementById("query-ids")
           .addEventListener("click", querybyIDs);
 
-        // #region [blue] Venntel Integration
->>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
+        // #region [default] Venntel Integration
           function toggleVenntelQuery() {
             console.log(queryDiv.style.display);
             if (queryDiv.style.display == "" || queryDiv.style.display == "none") {
@@ -703,13 +670,8 @@
             console.log(portal);
             // Create query parameters for the portal search
             var queryParams = new PortalQueryParams({
-<<<<<<< HEAD
-              //query: "owner:" + portal.user.username,
-              query: "tags: venntel type: Feature Service owner: jsingletary_qptampa",
-=======
               query: "owner:" + portal.user.username,
               // query: "tags: venntel type: Feature Service owner: heather_qptampa",
->>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
               sortField: "numViews",
               sortOrder: "desc",
               num: 20
@@ -718,12 +680,12 @@
             document.getElementById("sign-in").innerHTML = portal.user.username;
 
             // Query the items based on the queryParams created from portal above
-            portal.queryItems(queryParams).then(createList);
+            portal.queryItems(queryParams).then(createListNew);
           });
         }
         //Query for devices based on point features on the map
         function queryDevices(){
-          graphics = []
+          graphics = [];
           var ptLocationsLayer = webmapTest.layers.items[0];
           ptLocationsLayer.queryFeatures().then(function(results){
             //console.log(results.features.length);
@@ -944,8 +906,6 @@
               });
             });
         }
-<<<<<<< HEAD
-=======
 
         function createListNew(items){
           /************************************************************
@@ -1049,10 +1009,10 @@
           });
         }
         // #endregion
->>>>>>> 4b5251f2cbbdf868ac8a7d57d76ffff49b413975
       });
       
     </script>
+
     <div class="header">
       <div class="title">Anonymized Mobile Phone Data</div>
       <button class="btn btn-default btn-sm" id="queryVenntel" >
@@ -1063,7 +1023,10 @@
       <button class="btn btn-default btn-sm" id="addData">Add Data</button>
       <button class="btn btn-default btn-sm" id="sign-in">Sign In</button>
     </div>
+
+    <!-- Entry Point -->
     <div id="viewDiv"></div>
+
     <!-- Custom Panel -->
     <div id="panel"class="esri-widget">
       <label class="description"><b>Instructions:</b><br /></label>
@@ -1071,9 +1034,10 @@
       <label class="description"></label>
       <div class="cards-list"></div>
     </div>
+
     <div id="queryDiv" class="queryDiv-container esri-widget--panel">
         <br />Enter distance to buffer in meters<br/>
-        <input type="text" id="inputDistance" styel="widgth:30px;" value="50" /><br/>
+        <input type="text" id="inputDistance" styel="width:30px;" value="50" /><br/>
         <br />
         <label for="startTime">Start time (date and time):</label><br/>
         <input type="datetime-local" id="startTime" name="startTime"><br/>
